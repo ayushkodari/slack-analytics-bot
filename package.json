@@ -1,0 +1,26 @@
+{
+  "name": "slack-analytics-bot",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/012802HJoshi/slack-analytics-bot#readme",
+  "bugs": {
+    "url": "https://github.com/012802HJoshi/slack-analytics-bot/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/012802HJoshi/slack-analytics-bot.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start:dev": "NODE_ENV=development npx nodemon",
+    "start:prod": "NODE_ENV=production node ./src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "nodemon": "^3.1.10"
+  }
+}
