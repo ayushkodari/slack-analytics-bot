@@ -14,8 +14,11 @@ const slack_web =slack_init(token);
 
 app.get('/message',(req,res)=>{
     const {message} = req.query;
-    res.send("Slack Analytics Bot");
     sendSlackMessage(slack_web,channel,message);
+})
+
+app.get("/",(req,res)=>{
+ res.send("Slack Analytics Bot");
 })
 
 app.listen(PORT, ()=>{
