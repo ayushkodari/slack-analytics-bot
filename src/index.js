@@ -2,6 +2,7 @@ import express from "express";
 import { configDotenv } from "dotenv";
 import { slack_init,sendSlackMessage } from "./Helper/slack.js";
 import bodyParser from "body-parser";
+import fs from "node:fs";
 
 configDotenv({path:`./.env.${process.env.NODE_ENV || 'development'}` });
 
@@ -22,7 +23,8 @@ app.get('/message',(req,res)=>{
 
 app.post("/show-boobs",(req, res) => {
   console.log("Slash command received:", req.body);
-  res.send("👀 Command received successfully!");
+   res.addTrailers.pipe(fs.createReadStream("/image.jpeg"));
+  // res.send("👀 Command received successfully!");
 });
 
 app.listen(PORT, ()=>{
