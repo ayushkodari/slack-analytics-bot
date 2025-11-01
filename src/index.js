@@ -13,6 +13,7 @@ const channel = process.env.SLACK_CHANNEL_ID;
 const app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public')); 
 
 const slack_web =slack_init(token);
 
@@ -22,10 +23,32 @@ app.get('/message',(req,res)=>{
 })
 
 app.post("/show-boobs",(req, res) => {
+  //   res.setHeader("Content-Type", "image/jpeg");
+  // res.setHeader("Content-Disposition", "inline; filename=\"image.jpeg\"");
   console.log("Slash command received:", req.body);
-   res.addTrailers.pipe(fs.createReadStream("/image.jpeg"));
-  // res.send("👀 Command received successfully!");
+  
+  // const readableStream = fs.createReadStream("./image.jpeg");
+  // readableStream.on("data",(chunk)=>{
+  //   console.log(chunk);
+  //   res.send(chunk);
+  // });
+
+  // res.send(`https://stanton-unslain-ross.ngrok-free.dev/image.jpeg`);
+  res.json({
+    response_type: "in_channel", // makes the image visible to everyone
+    text: "Here’s your image 👀",
+    attachments: [
+      {
+        image_url: "https://stanton-unslain-ross.ngrok-free.dev/image.jpeg", // must be a public URL
+        alt_text: "Boobs Image"
+      }
+    ]
+  });
 });
+
+app.get('/',(req,res)=>{
+  res.send("Hello World")
+})
 
 app.listen(PORT, ()=>{
     console.log(`[SERVER]: server listening at port ${PORT}`);
