@@ -1,5 +1,6 @@
 import express from "express";
 import { configDotenv } from "dotenv";
+import { App } from "@slack/bolt";
 import { slack_init,sendSlackMessage } from "./Helper/slack.js";
 import bodyParser from "body-parser";
 import fs from "node:fs";
@@ -9,6 +10,8 @@ configDotenv({path:`./.env.${process.env.NODE_ENV || 'development'}` });
 const PORT = process.env.PORT;
 const token = process.env.SLACK_BOT_TOKEN;
 const channel = process.env.SLACK_CHANNEL_ID;
+
+
 
 const app = express();
 
@@ -23,28 +26,23 @@ app.get('/message',(req,res)=>{
 })
 
 app.post("/show-boobs",(req, res) => {
-  //   res.setHeader("Content-Type", "image/jpeg");
-  // res.setHeader("Content-Disposition", "inline; filename=\"image.jpeg\"");
   console.log("Slash command received:", req.body);
-  
-  // const readableStream = fs.createReadStream("./image.jpeg");
-  // readableStream.on("data",(chunk)=>{
-  //   console.log(chunk);
-  //   res.send(chunk);
-  // });
-
-  // res.send(`https://stanton-unslain-ross.ngrok-free.dev/image.jpeg`);
   res.json({
-    response_type: "in_channel", // makes the image visible to everyone
+    response_type: "in_channel",
     text: "Here’s your image 👀",
     attachments: [
       {
-        image_url: "https://stanton-unslain-ross.ngrok-free.dev/image.jpeg", // must be a public URL
+        image_url: "https://stanton-unslain-ross.ngrok-free.dev/image.jpeg",
         alt_text: "Boobs Image"
       }
     ]
   });
 });
+
+app.post("/upload-csv",(req,res)=>{
+   console.log("Slash command received:", req.body);
+   res.send(`Text File :${req.body.text}`);
+})
 
 app.get('/',(req,res)=>{
   res.send("Hello World")
