@@ -19,6 +19,7 @@
     "start:prod": "NODE_ENV=production node ./src/index.js"
   },
   "dependencies": {
+    "@google-analytics/data": "^5.2.1",
     "@slack/bolt": "^4.6.0",
     "@slack/events-api": "^3.0.1",
     "@slack/web-api": "^7.12.0",
