@@ -1,25 +1,25 @@
 import { analyticsDataClient } from "../Config/ga4.js";
 import { propertyId } from "../Config/env.js";
 
-export const runReport = async ()=>{
-    const [response] = await analyticsDataClient.runReport({
+export const runReport = async (startDate,endDate,dimensionsValue,metricsValue)=>{
+    const response = await analyticsDataClient.runReport({
         property:`properties/${propertyId}`,
         dateRanges: [
       {
-        startDate: '2025-09-30',
-        endDate: 'today',
+        startDate,
+        endDate,
       },
     ],
     dimensions: [
       {
-        name: 'country',
+        name: dimensionsValue,
       },
     ],
     metrics: [
       {
-        name: 'activeUsers',
+        name: metricsValue,
       },
     ],
     })
-    console.log(response);
+    return response;
 }
