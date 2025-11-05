@@ -1,11 +1,10 @@
-import {WebClient,LogLevel} from "@slack/web-api";
+import { slackChannelId } from "../Config/env.js";
+import { slack_init } from "../Config/slack.js";
 
-export const slack_init = (token)=> new WebClient(token, { logLevel: LogLevel.DEBUG });
-
-export const sendSlackMessage =async (slack_init,channel,text)=>{
+export const sendSlackMessageChannel = async (text)=>{
     try{
-        await slack_init.chat.postMessage({
-            channel,
+        await slack_init().chat.postMessage({
+            channel:slackChannelId,
             text
         });
     }catch(err){
