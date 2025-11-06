@@ -1,12 +1,12 @@
-export const Last7days = ()=>{
-    const days7 = new Date();
-    days7.setDate(days7.getDate()-1);
-    const start = new Date(days7);
-    start.setDate(start.getDate()-6);
+export const lastdays = (days,initday)=>{
+    const d = new Date(initday);
+    d.setDate(d.getDate()-1);
+    const start = new Date(d);
+    start.setDate(start.getDate()-days);
       
-    return start.toISOString().slice(0, 10);;
+    return start.toISOString().slice(0, 10);
 }
 
-console.log(Last7days());
+
 
 
