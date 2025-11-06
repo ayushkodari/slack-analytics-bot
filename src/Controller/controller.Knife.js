@@ -1,5 +1,7 @@
 import { runReport } from "../Helper/GA4.js";
-import { lastdays } from "../Helper/Date.js";
+import { analyticsDataClient } from "../Config/ga4.js";
+import { propertyId } from "../Config/env.js";
+import { lastdays,lastMonthRanges,monthStart } from "../Helper/Date.js";
 
 
 function formatTable(rows, columns, prettyCurrency = false, currency = "USD") {
@@ -89,10 +91,10 @@ export const RevenueVsCountry = async (req,res)=>{
             break;
          }
          case "date": {
-            const startDate = command.split(" ")[2];
-            const endDate = command.split(" ")[1];
+            const startDate = command.split(" ")[1];
+            const endDate = command.split(" ")[2];
 
-            const [response] = await runReport(endDate, startDate, "country", "totalRevenue");
+            const [response] = await runReport(startDate, endDate, "country", "totalRevenue");
             const rows = response.rows?.map(r => ({
             Country: r.dimensionValues?.[0]?.value || "(not set)",
             Total_Revenue: r.metricValues?.[0]?.value || "0",
@@ -101,7 +103,7 @@ export const RevenueVsCountry = async (req,res)=>{
             rows.sort((a, b) => Number(b.Total_Revenue) - Number(a.Total_Revenue));
             const top10 = rows.slice(0, 10);
 
-            const title = `Revenue vs Country · ${endDate} to ${startDate}  Day (Top 10)`;
+            const title = `Revenue vs Country · ${startDate} to ${endDate}  Day (Top 10)`;
             const table = formatTable(top10, ["Country", "Total_Revenue"], /*prettyCurrency*/ true, /*currency*/ "USD");
 
             res.type("text/plain");
@@ -128,7 +130,7 @@ export const RevenueVsCountry = async (req,res)=>{
           '• `+week` → Last 7 days\n' +
           '• `+month` → Last 30 days\n' +
           '• `+day <YYYY-MM-DD>` → *Specific date only*. Example: `+day 2025-03-10`\n' +
-          '• `+date <YYYY-MM-DD> <YYYY-MM-DD>` → From that date *up to today*. Example: `+date 2025-01-01 2025-11-01`'
+          '• `+date <YYYY-MM-DD> <YYYY-MM-DD>` → From *startDate* to *endDate* . Example: `+date 2025-01-01 2025-11-01`'
           }
           },
           {
@@ -146,4 +148,64 @@ export const RevenueVsCountry = async (req,res)=>{
     }catch(err){
       return res.send(`Internal Server Error: ${err}`);
     }
+}
+
+
+export const SummaryMonthly = async (req,res)=>{
+   try{
+      const startDate = monthStart();
+      const {startLast,endLast} =lastMonthRanges();
+   
+      const [response] = await analyticsDataClient.runReport({
+         property: `properties/${propertyId}`,
+         dateRanges: [{ startDate, endDate:"today" }],
+         metrics: [ 
+            { name: "totalRevenue" },
+            { name: "totalAdRevenue" },
+            { name: "purchaseRevenue" }
+         ],
+      });
+
+      const [responseLast] = await analyticsDataClient.runReport({
+         property: `properties/${propertyId}`,
+         dateRanges: [{ startDate:startLast, endDate:endLast }],
+         metrics: [
+             { name: "totalRevenue" },
+             { name: "totalAdRevenue" },
+             { name: "purchaseRevenue" }
+         ],
+      });
+
+         const totalRevenue = parseFloat(response.rows?.[0]?.metricValues?.[0]?.value || 0);
+         const adRevenue = parseFloat(response.rows?.[0]?.metricValues?.[1]?.value || 0);
+         const purchaseRevenue = parseFloat(response.rows?.[0]?.metricValues?.[2]?.value || 0);
+
+
+         const totalRevenueLast = parseFloat(responseLast.rows?.[0]?.metricValues?.[0]?.value || 0);
+         const adRevenueLast = parseFloat(responseLast.rows?.[0]?.metricValues?.[1]?.value || 0);
+         const purchaseRevenueLast = parseFloat(responseLast.rows?.[0]?.metricValues?.[2]?.value || 0);
+
+
+         const percentChange = totalRevenueLast
+         ? (((totalRevenue - totalRevenueLast) / totalRevenueLast) * 100).toFixed(2)
+         : "N/A";
+
+
+         return res.send(
+         `💰 *Revenue Summary*\n` +
+         `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+         `*📆 This Month*\n` +
+         `• Total Revenue: *$${totalRevenue.toFixed(2)}*\n` +
+         `• Ad Revenue: *$${adRevenue.toFixed(2)}*\n` +
+         `• Purchase Revenue: *$${purchaseRevenue.toFixed(2)}*\n\n` +
+         `*🗓️ Last Month*\n` +
+         `• Total Revenue: *$${totalRevenueLast.toFixed(2)}*\n` +
+         `• Ad Revenue: *$${adRevenueLast.toFixed(2)}*\n` +
+         `• Purchase Revenue: *$${purchaseRevenueLast.toFixed(2)}*\n\n` +
+         `📈 *Change in Total Revenue:* ${percentChange}%`);
+
+   }catch(err){
+      console.log(err);
+      return res.send(`Internal Server Error: ${err}`);
+   }
 }
