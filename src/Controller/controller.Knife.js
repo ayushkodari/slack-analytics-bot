@@ -1,10 +1,10 @@
 import { runReport } from "../Helper/GA4.js";
 import { analyticsDataClient } from "../Config/ga4.js";
 import { propertyId } from "../Config/env.js";
-import { lastdays,lastMonthRanges,monthStart } from "../Helper/Date.js";
+import { lastdays,lastMonthRanges,monthStart,lastWeekDate } from "../Helper/Date.js";
 
 
-function formatTable(rows, columns, prettyCurrency = false, currency = "USD") {
+export function formatTable(rows, columns, prettyCurrency = false, currency = "USD") {
   const data = rows.map(r => ({
     Country: r.Country ?? "(not set)",
     Total_Revenue: prettyCurrency
@@ -150,7 +150,6 @@ export const RevenueVsCountry = async (req,res)=>{
     }
 }
 
-
 export const SummaryMonthly = async (req,res)=>{
    try{
       const startDate = monthStart();
@@ -254,6 +253,67 @@ return res.send(
    }
 }
 
+export const SummaryWeekly = async (req, res) => {
+  try {
+    const { startDate, endDate } = lastWeekDate(); // Get last week's date range
+
+    // Fetch the last week's data
+    const [response] = await analyticsDataClient.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [{ name: "eventName" }],
+      metrics: [
+        { name: "totalRevenue" },
+        { name: "totalAdRevenue" },
+        { name: "purchaseRevenue" },
+        { name: "activeUsers" },
+        { name: "newUsers" },
+        { name: "eventCount" },
+      ],
+    });
+
+    // 🔍 Helper: Extract event data
+    function extractEventData(response, eventName) {
+      const row = response.rows?.find(r => r.dimensionValues?.[0]?.value === eventName);
+      if (!row) return { activeUsers: 0, newUsers: 0, eventCount: 0 };
+
+      const activeUsers = parseFloat(row.metricValues?.[3]?.value || 0);
+      const newUsers = parseFloat(row.metricValues?.[4]?.value || 0);
+      const eventCount = parseFloat(row.metricValues?.[5]?.value || 0);
+      return { activeUsers, newUsers, eventCount };
+    }
+
+    // Extract `first_open` and `app_remove` for last week
+    const firstOpenLast = extractEventData(response, "first_open");
+    const appRemoveLast = extractEventData(response, "app_remove");
+
+    // Revenue Metrics for last week
+    const totalRevenue = parseFloat(response.rows?.[0]?.metricValues?.[0]?.value || 0);
+    const adRevenue = parseFloat(response.rows?.[0]?.metricValues?.[1]?.value || 0);
+    const purchaseRevenue = parseFloat(response.rows?.[0]?.metricValues?.[2]?.value || 0);
+
+    // Send the response with summary of last week
+    return res.send(
+      `💰 *Revenue Summary for Last Week*\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `*📆 Last Week*\n` +
+      `• Total Revenue: *$${totalRevenue.toFixed(2)}*\n` +
+      `• Ad Revenue: *$${adRevenue.toFixed(2)}*\n` +
+      `• Purchase Revenue: *$${purchaseRevenue.toFixed(2)}*\n\n` +
+
+      `👥 *User Metrics for Last Week*\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `• *first_open* → ${firstOpenLast.activeUsers} users\n` +
+      `   - Event Count: ${firstOpenLast.eventCount}\n` +
+      `• *app_remove* → ${appRemoveLast.activeUsers} users\n` +
+      `   - Event Count: ${appRemoveLast.eventCount}`
+    );
+  } catch (err) {
+    console.log(err);
+    return res.send(`Internal Server Error: ${err}`);
+  }
+};
+
 export const Summary = async(req,res)=>{
    try {
     res.json({
@@ -275,8 +335,54 @@ export const Summary = async(req,res)=>{
               name: "summary-week",
               text: "Weekly Summary",
               type: "button",
-              value: "weekly_summary",
+              value: "knife_weekly_summary",
             },
+            {
+              name: "revenueVsCountry",
+              text: "Last 7 days Revenue",
+              type: "button",
+              value: "knife_revenue_7",
+            },
+            {
+              name: "revenueVsCountry",
+              text: "Last 30 days Revenue",
+              type: "button",
+              value: "knife_revenue_30",
+            },
+            {
+              name: "revenueVsCountry",
+              text: "Last 24 hrs Revenue",
+              type: "button",
+              value: "knife_revenue_24hr",
+            }
+          ],
+        },
+      ],
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(200).send("An error occurred");
+  }
+}
+
+
+export const DetailedSummary = async(req,res)=>{
+   try {
+    res.json({
+      response_type: "ephemeral", 
+      text: "🗡️ Knife Detailed Summary Options",
+      attachments: [
+        {
+          text: "Choose what Detailed Summary you want:",
+          fallback: "You are unable to choose an option",
+          callback_id: "knife_detailed_summary",
+          actions: [
+            {
+              name: "activeUserVsCountry",
+              text: "Active Users of 30 days",
+              type: "button",
+              value: "knife_active_30",
+            }
           ],
         },
       ],

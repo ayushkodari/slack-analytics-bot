@@ -1,5 +1,5 @@
-export const lastdays = (days,initday)=>{
-    const d = new Date(initday);
+export const lastdays = (days)=>{
+    const d = new Date();
     d.setDate(d.getDate()-1);
     const start = new Date(d);
     start.setDate(start.getDate()-days);
@@ -35,3 +35,10 @@ export const monthStart =()=>{
     return format(monthStart);
 }
 
+export const lastWeekDate=() =>{
+  const currentDate = new Date();
+  const endDate = currentDate.toISOString().split('T')[0]; // 'YYYY-MM-DD' format
+  currentDate.setDate(currentDate.getDate() - 7); // Set 7 days back
+  const startDate = currentDate.toISOString().split('T')[0]; // 'YYYY-MM-DD' format
+  return { startDate, endDate };
+}
