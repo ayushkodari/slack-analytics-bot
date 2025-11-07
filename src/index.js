@@ -2,6 +2,7 @@ import express from "express";
 import { port } from "./Config/env.js";
 import { router as knife } from "./Router/router.knife.js";
 import bodyParser from "body-parser";
+import { Interactions } from "./Helper/Interactions.js";
 
 const app = express();
 
@@ -22,6 +23,9 @@ app.post("/show-boobs",(req, res) => {
     ]
   });
 });
+
+
+app.post("/slack/interactions", Interactions);
 
 app.post("/upload-csv",(req,res)=>{
    console.log("Slash command received:", req.body);

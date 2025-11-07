@@ -157,55 +157,132 @@ export const SummaryMonthly = async (req,res)=>{
       const {startLast,endLast} =lastMonthRanges();
    
       const [response] = await analyticsDataClient.runReport({
-         property: `properties/${propertyId}`,
-         dateRanges: [{ startDate, endDate:"today" }],
-         metrics: [ 
-            { name: "totalRevenue" },
-            { name: "totalAdRevenue" },
-            { name: "purchaseRevenue" }
-         ],
-      });
+  property: `properties/${propertyId}`,
+  dateRanges: [{ startDate, endDate: "today" }],
+  dimensions: [{ name: "eventName" }],
+  metrics: [
+    { name: "totalRevenue" },
+    { name: "totalAdRevenue" },
+    { name: "purchaseRevenue" },
+    { name: "activeUsers" },
+    { name: "newUsers" },
+    { name: "eventCount" },
+  ],
+});
 
-      const [responseLast] = await analyticsDataClient.runReport({
-         property: `properties/${propertyId}`,
-         dateRanges: [{ startDate:startLast, endDate:endLast }],
-         metrics: [
-             { name: "totalRevenue" },
-             { name: "totalAdRevenue" },
-             { name: "purchaseRevenue" }
-         ],
-      });
+const [responseLast] = await analyticsDataClient.runReport({
+  property: `properties/${propertyId}`,
+  dateRanges: [{ startDate: startLast, endDate: endLast }],
+  dimensions: [{ name: "eventName" }],
+  metrics: [
+    { name: "totalRevenue" },
+    { name: "totalAdRevenue" },
+    { name: "purchaseRevenue" },
+    { name: "activeUsers" },
+    { name: "newUsers" },
+    { name: "eventCount" },
+  ],
+});
 
-         const totalRevenue = parseFloat(response.rows?.[0]?.metricValues?.[0]?.value || 0);
-         const adRevenue = parseFloat(response.rows?.[0]?.metricValues?.[1]?.value || 0);
-         const purchaseRevenue = parseFloat(response.rows?.[0]?.metricValues?.[2]?.value || 0);
+// 🔍 Helper: Extract event data
+function extractEventData(response, eventName) {
+  const row = response.rows?.find(r => r.dimensionValues?.[0]?.value === eventName);
+  if (!row) return { activeUsers: 0, newUsers: 0, eventCount: 0 };
+
+  const activeUsers = parseFloat(row.metricValues?.[3]?.value || 0);
+  const newUsers = parseFloat(row.metricValues?.[4]?.value || 0);
+  const eventCount = parseFloat(row.metricValues?.[5]?.value || 0);
+  return { activeUsers, newUsers, eventCount };
+}
+
+// 🔹 This month data
+const firstOpenThis = extractEventData(response, "first_open");
+const appRemoveThis = extractEventData(response, "app_remove");
+
+// 🔹 Last month data
+const firstOpenLast = extractEventData(responseLast, "first_open");
+const appRemoveLast = extractEventData(responseLast, "app_remove");
+
+// 💰 Revenue summary (existing part)
+const totalRevenue = parseFloat(response.rows?.[0]?.metricValues?.[0]?.value || 0);
+const adRevenue = parseFloat(response.rows?.[0]?.metricValues?.[1]?.value || 0);
+const purchaseRevenue = parseFloat(response.rows?.[0]?.metricValues?.[2]?.value || 0);
+
+const totalRevenueLast = parseFloat(responseLast.rows?.[0]?.metricValues?.[0]?.value || 0);
+const adRevenueLast = parseFloat(responseLast.rows?.[0]?.metricValues?.[1]?.value || 0);
+const purchaseRevenueLast = parseFloat(responseLast.rows?.[0]?.metricValues?.[2]?.value || 0);
+
+const percentChange = totalRevenueLast
+  ? (((totalRevenue - totalRevenueLast) / totalRevenueLast) * 100).toFixed(2)
+  : "N/A";
 
 
-         const totalRevenueLast = parseFloat(responseLast.rows?.[0]?.metricValues?.[0]?.value || 0);
-         const adRevenueLast = parseFloat(responseLast.rows?.[0]?.metricValues?.[1]?.value || 0);
-         const purchaseRevenueLast = parseFloat(responseLast.rows?.[0]?.metricValues?.[2]?.value || 0);
+return res.send(
+  `💰 *Revenue Summary*\n` +
+  `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+  `*📆 This Month So Far*\n` +
+  `• Total Revenue: *$${totalRevenue.toFixed(2)}*\n` +
+  `• Ad Revenue: *$${adRevenue.toFixed(2)}*\n` +
+  `• Purchase Revenue: *$${purchaseRevenue.toFixed(2)}*\n\n` +
 
+  `*🗓️ Last Month*\n` +
+  `• Total Revenue: *$${totalRevenueLast.toFixed(2)}*\n` +
+  `• Ad Revenue: *$${adRevenueLast.toFixed(2)}*\n` +
+  `• Purchase Revenue: *$${purchaseRevenueLast.toFixed(2)}*\n\n` +
 
-         const percentChange = totalRevenueLast
-         ? (((totalRevenue - totalRevenueLast) / totalRevenueLast) * 100).toFixed(2)
-         : "N/A";
+  `📈 *Change in Total Revenue:* ${percentChange}%\n\n` +
 
+  `👥 *User Metrics*\n` +
+  `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+  `*📆 This Month So Far*\n` +
+  `• *first_open* → ${firstOpenThis.activeUsers} users\n` +
+  `   - Event Count: ${firstOpenThis.eventCount}\n` +
+  `• *app_remove* → ${appRemoveThis.activeUsers} users\n` +
+  `   - Event Count: ${appRemoveThis.eventCount}\n\n` +
 
-         return res.send(
-         `💰 *Revenue Summary*\n` +
-         `━━━━━━━━━━━━━━━━━━━━━━━\n` +
-         `*📆 This Month*\n` +
-         `• Total Revenue: *$${totalRevenue.toFixed(2)}*\n` +
-         `• Ad Revenue: *$${adRevenue.toFixed(2)}*\n` +
-         `• Purchase Revenue: *$${purchaseRevenue.toFixed(2)}*\n\n` +
-         `*🗓️ Last Month*\n` +
-         `• Total Revenue: *$${totalRevenueLast.toFixed(2)}*\n` +
-         `• Ad Revenue: *$${adRevenueLast.toFixed(2)}*\n` +
-         `• Purchase Revenue: *$${purchaseRevenueLast.toFixed(2)}*\n\n` +
-         `📈 *Change in Total Revenue:* ${percentChange}%`);
+  `*🗓️ Last Month*\n` +
+  `• *first_open* → ${firstOpenLast.activeUsers} users\n` +
+  `   - Event Count: ${firstOpenLast.eventCount}\n` +
+  `• *app_remove* → ${appRemoveLast.activeUsers} users\n` +
+  `   - Event Count: ${appRemoveLast.eventCount}`
+);
+
 
    }catch(err){
       console.log(err);
       return res.send(`Internal Server Error: ${err}`);
    }
+}
+
+export const Summary = async(req,res)=>{
+   try {
+    res.json({
+      response_type: "ephemeral", 
+      text: "🗡️ Knife Summary Options",
+      attachments: [
+        {
+          text: "Choose what summary you want:",
+          fallback: "You are unable to choose an option",
+          callback_id: "knife_summary_monthly",
+          actions: [
+            {
+              name: "summary-month",
+              text: "Monthly Summary",
+              type: "button",
+              value: "knife_summary_monthly",
+            },
+            {
+              name: "summary-week",
+              text: "Weekly Summary",
+              type: "button",
+              value: "weekly_summary",
+            },
+          ],
+        },
+      ],
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(200).send("An error occurred");
+  }
 }
