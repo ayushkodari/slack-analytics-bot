@@ -11,14 +11,14 @@ pipeline {
         stage("Environment Setup") {
             steps {
                script {
-                    withCredentials([file(credentialsId: 'ENV_SLACK_ANALYTICS_BOT', variable: 'ENV_SLACK_ANALYTICS_BOT')]) {
+                    withCredentials([file(credentialsId: 'SLACK_ANALYTICS_BOT', variable: 'ENV_FILE')]) {
                         // Ensure the .env file exists and has the correct permissions
                         sh 'touch .env'
                         sh 'chown jenkins:jenkins .env'
                         sh 'chmod 664 .env'
 
                         // Copy the entire .env file instead of echoing a single variable
-                        sh 'cp $ENV_SLACK_ANALYTICS_BOT .env'
+                        sh 'cp $ENV_FILE .env'
                     }
                }
             }

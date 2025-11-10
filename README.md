@@ -1,1 +1,1 @@
-# slack-analytics-bot
+# Slack Analytics Bot
