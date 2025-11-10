@@ -11,14 +11,14 @@ pipeline {
         stage("Environment Setup") {
             steps {
                script {
-                    withCredentials([file(credentialsId: 'ENV_PRODUCTION_SLACK_BOT', variable: 'ENV_FILE_SLACK_BOT')]) {
+                    withCredentials([file(credentialsId: 'ENV_SLACK_ANALYTICS_BOT', variable: 'ENV_SLACK_ANALYTICS_BOT')]) {
                         // Ensure the .env file exists and has the correct permissions
-                        sh 'touch .env.production'
-                        sh 'chown jenkins:jenkins .env.production'
-                        sh 'chmod 664 .env.production'
+                        sh 'touch .env'
+                        sh 'chown jenkins:jenkins .env'
+                        sh 'chmod 664 .env'
 
                         // Copy the entire .env file instead of echoing a single variable
-                        sh 'cp $ENV_FILE_SLACK_BOT .env'
+                        sh 'cp $ENV_SLACK_ANALYTICS_BOT .env'
                     }
                }
             }
@@ -26,7 +26,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t slack_bot:${BUILD_NUMBER} -t slack_bot:latest .'
+                sh 'docker build -t slack_analytics_bot:${BUILD_NUMBER} -t slack_analytics_bot:latest .'
             }
         }
         
