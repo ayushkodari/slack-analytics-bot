@@ -9,21 +9,22 @@ pipeline {
         }
 
         stage("Environment Setup") {
-            steps {
-               script {
-                    withCredentials([file(credentialsId: 'SLACK_ANALYTICS_BOT', variable: 'ENV_FILE_SLACK')]) {
-                            // Ensure the .env file exists and has the correct permissions
-                        sh 'touch .env.production'
-                        sh 'chown jenkins:jenkins .env.production'
-                        sh 'chmod 664 .env.production'
-                        sh 'echo "ENV_FILE_SLACK path: $ENV_FILE_SLACK"'
+    steps {
+       script {
+            withCredentials([file(credentialsId: 'SLACK_ANALYTICS_BOT', variable: 'ENV_FILE_SLACK')]) {
+                // Ensure the .env file exists and has the correct permissions
+                // sh 'touch .env.production'
+                // sh 'chown jenkins:jenkins .env.production'
+                // sh 'chmod 664 .env.production'
+                sh 'echo "ENV_FILE_SLACK path: $ENV_FILE_SLACK"'
 
-                        // Copy the entire .env file instead of echoing a single variable
-                        sh 'cp $ENV_FILE_SLACK .env.production'
-                    }
-               }
+                // Copy the credentials file content to .env.production
+                sh 'cat $ENV_FILE_SLACK > .env.production'
+                 sh 'chmod 644 .env.production'
             }
-        }
+       }
+    }
+}
 
         stage('Build Docker Image') {
             steps {
