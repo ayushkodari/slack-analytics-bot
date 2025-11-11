@@ -34,9 +34,9 @@ pipeline {
         
         stage('Deploy') {
             steps {
-               sh 'docker stop slack-bot || true'
-               sh 'docker rm slack-bot || true'
-               sh 'docker run -d --name slack-bot -p 6960:6960 slack-bot:latest'
+               sh 'docker stop slack_analytics_bot || true'
+               sh 'docker rm slack_analytics_bot || true'
+               sh 'docker run -d --name slack_analytics_bot -p 6960:6960 slack_analytics_bot:latest'
             }
         }
     }
